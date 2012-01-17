@@ -1,39 +1,39 @@
-﻿var locator = function () {
+﻿(function (locator, google, undefined) {
 
-    var _logger,
+    var logger,
         $ref = this,
         defaultTimeout = 15;
 
     /* Public Methods
     *******************************************************************/
 
-    this.attachLogger = function (logger) {
-        _logger = logger;
-        _logger.log("attached logger");
+    locator.attachLogger = function (log) {
+        logger = log;
+        logger.log("attached logger");
     };
 
-    this.resolveLocation = function (successCallback, failCallback, timeout) {
-        _resolveLocation(successCallback, failCallback, timeout);
+    locator.resolveLocation = function (successCallback, failCallback, timeout) {
+        resolveLocation(successCallback, failCallback, timeout);
     };
 
-    this.getLocationDetails = function (latitude, longitude, successCallback, failCallback) {
-        _googleReverseGeocode(latitude, longitude, successCallback, failCallback);
+    locator.getLocationDetails = function (latitude, longitude, successCallback, failCallback) {
+        googleReverseGeocode(latitude, longitude, successCallback, failCallback);
     };
 
-    this.getFirstGeocodedAddress = function (results, successCallback, failCallback) {
-        _getFirstGeocodedAddress(results, successCallback, failCallback);
+    locator.getFirstGeocodedAddress = function (results, successCallback, failCallback) {
+        getFirstGeocodedAddress(results, successCallback, failCallback);
     };
 
-    this.getFirstGeocodedTown = function (results, successCallback, failCallback) {
-        _getFirstGeocodedTown(results, successCallback, failCallback);
+    locator.getFirstGeocodedTown = function (results, successCallback, failCallback) {
+        getFirstGeocodedTown(results, successCallback, failCallback);
     };
 
-    this.getClosestGeocodedAddressToLocation = function (location, successCallback, failCallback) {
-        _googleReverseGeocode(
+    locator.getClosestGeocodedAddressToLocation = function (location, successCallback, failCallback) {
+        googleReverseGeocode(
             location.latitude,
             location.longitude,
             function (results) {
-                _getFirstGeocodedAddress(
+                getFirstGeocodedAddress(
                     results,
                     function (address) { successCallback(address); },
                     failCallback);
@@ -41,8 +41,8 @@
             failCallback);
     };
 
-    this.getClosestGeocodedAddressToCurrentLocation = function (successCallback, failCallback, timeout) {
-        _resolveLocation(
+    locator.getClosestGeocodedAddressToCurrentLocation = function (successCallback, failCallback, timeout) {
+        resolveLocation(
             function (location) {
                 $ref.getClosestGeocodedAddressToLocation(location, successCallback, failCallback);
             },
@@ -51,10 +51,9 @@
         );
     };
 
-    this.geocodeAddress = function (address, successCallback, failCallBack) {
-        _googleGeocode(address, successCallback, failCallBack);
+    locator.geocodeAddress = function (address, successCallback, failCallBack) {
+        googleGeocode(address, successCallback, failCallBack);
     };
-
 
     /* Private Methods
     *******************************************************************/
@@ -63,7 +62,7 @@
     /// If the user denies access or it's not available, it falls back to
     /// Google's geolocation API. If this isn't available or fails, the 
     /// failure callback is called.
-    var _resolveLocation = function (successCallback, failCallback, timeout) {
+    function resolveLocation(successCallback, failCallback, timeout) {
         // HTML5 geolocation
         if (navigator.geolocation && navigator.geolocation.getCurrentPosition) {
 
@@ -83,7 +82,7 @@
             // Revert to Google if user denies access
                 function (error) {
                     // _log("HTML5 geolocation failed, reverting to Google");
-                    _googleLocation(successCallback, failCallback);
+                    googleLocation(successCallback, failCallback);
                 },
 
                 { timeout: timeout * 1000 }
@@ -92,13 +91,13 @@
 
         else {
             // _log("HTML5 geolocation unavailable, reverting to Google");
-            _googleLocation(successCallback, failCallback);
+            googleLocation(successCallback, failCallback);
         }
-    },
+    }
 
     /// Looks up the user's location using the Google geocoding API.
-    _googleLocation = function (successCallback, failCallback) {
-        if (_canUseGoogle()) {
+    function googleLocation(successCallback, failCallback) {
+        if (canUseGoogle()) {
             // _log("Google geolocation available");
             var location = google.loader.ClientLocation;
 
@@ -119,10 +118,10 @@
             // _log("Google geolocation unavailable");
             failCallback("Google geolocation unavailable");
         }
-    },
+    }
 
     /// Reverse gecodes a LatLng using the Google geocoder.
-    _googleReverseGeocode = function (latitude, longitude, successCallback, failCallback) {
+    function googleReverseGeocode(latitude, longitude, successCallback, failCallback) {
         // _log("Reverse geocoding");
         var geocoder = new google.maps.Geocoder();
 
@@ -144,10 +143,10 @@
             // _log("Reverse geocoding unavailable");
             failCallback("Reverse geocoding unavailable");
         }
-    },
+    }
 
     // Gets the first formatted address from a list of geocoded results.
-    _getFirstGeocodedAddress = function (results, successCallback, failCallback) {
+    function getFirstGeocodedAddress(results, successCallback, failCallback) {
         // _log("Getting geocoded address");
         var address = results[0].formatted_address;
         if (address) {
@@ -158,10 +157,10 @@
             // _log("Getting geocoded address failure");
             failCallback("Getting geocoded address failure");
         }
-    },
+    }
 
     // Gets the first formatted address from a list of geocoded results.
-    _getFirstGeocodedTown = function (results, successCallback, failCallback) {
+    function getFirstGeocodedTown(results, successCallback, failCallback) {
         // _log("Getting geocoded town");
         var address = results[0].formatted_address;
         if (address) {
@@ -172,9 +171,9 @@
             // _log("Getting geocoded town failure");
             failCallback("Getting geocoded town failure");
         }
-    },
+    }
 
-    _googleGeocode = function (address, successCallback, failCallback) {
+    function googleGeocode(address, successCallback, failCallback) {
         var geocoder = new google.maps.Geocoder();
         geocoder.geocode({ 'address': address, 'region': 'GB' }, function (results, status) {
             if (status == google.maps.GeocoderStatus.OK) {
@@ -188,18 +187,18 @@
                 }
             }
         });
-    },
+    }
 
     // Check to see whether the google.loader.ClientLocation is available.
-    _canUseGoogle = function () {
+    function canUseGoogle() {
         return (typeof google == 'object') && google.loader && google.loader.ClientLocation;
-    },
+    }
 
 
-    _log = function (message) {
-        if (_logger) {
-            _logger.log(message);
+    function log(message) {
+        if (logger) {
+            logger.log(message);
         }
-    };
+    }
 
-};
+} ( window.locator = window.locator || {}, google ))
